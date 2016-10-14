@@ -1,0 +1,12 @@
+[package]
+authors = ["Jorge Aparicio <japaricious@gmail.com>"]
+description = "A C free / pure Rust mathematical library (\"libm\") for `no_std` code"
+documentation = "https://docs.rs/m"
+keywords = ["float", "math", "libm", "no_std"]
+license = "BSD-2-Clause AND ISC AND MIT"
+name = "m"
+repository = "https://github.com/japaric/m"
+version = "0.1.0"
+
+[dev-dependencies]
+quickcheck = "0.3.1"
