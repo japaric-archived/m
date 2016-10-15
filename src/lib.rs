@@ -26,7 +26,7 @@
 //! - `fabsf`
 
 #![cfg_attr(not(test), no_std)]
-// #![deny(warnings)]
+#![deny(warnings)]
 
 #[cfg(test)]
 extern crate core;
