@@ -1,0 +1,63 @@
+cache: cargo
+dist: trusty
+language: rust
+rust: nightly
+services: docker
+sudo: required
+
+env:
+  global:
+    - TARGET=x86_64-unknown-linux-gnu
+
+matrix:
+  include:
+    # OSX
+    - env: TARGET=i686-apple-darwin
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+    # Linux
+    - env: TARGET=aarch64-unknown-linux-gnu
+    - env: TARGET=arm-unknown-linux-gnueabi
+    - env: TARGET=arm-unknown-linux-gnueabihf
+    - env: TARGET=armv7-unknown-linux-gnueabihf
+    - env: TARGET=i586-unknown-linux-gnu
+    - env: TARGET=i686-unknown-linux-gnu
+    - env: TARGET=mips-unknown-linux-gnu
+    - env: TARGET=mips64-unknown-linux-gnuabi64
+    - env: TARGET=mips64el-unknown-linux-gnuabi64
+    - env: TARGET=mipsel-unknown-linux-gnu
+    - env: TARGET=powerpc-unknown-linux-gnu
+    - env: TARGET=powerpc64-unknown-linux-gnu
+    - env: TARGET=powerpc64le-unknown-linux-gnu
+    - env: TARGET=s390x-unknown-linux-gnu
+
+install:
+  # `std for cross-compilation
+  - curl https://static.rust-lang.org/rustup.sh |
+    sh -s -- --add-target=$TARGET --disable-sudo -y --prefix=`rustc --print sysroot`
+  # For transparent QEMU user emulation
+  - test $TRAVIS_OS_NAME = osx ||
+    docker run --privileged --rm -it ubuntu:16.04 sh -c
+    "apt-get update && apt-get install -qq binfmt-support qemu-user-static"
+
+script:
+  - cargo generate-lockfile
+  - if [[ $TRAVIS_OS_NAME = linux ]]; then
+      sh ci/run-docker.sh $TARGET;
+    else
+      sh ci/run.sh;
+    fi
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    - auto
+    - try
+
+notifications:
+  email:
+    on_success: never
+  webhooks: https://homu.herokuapp.com/travis
