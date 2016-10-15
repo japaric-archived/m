@@ -1,6 +1,7 @@
-[![Build Status][travis]](https://travis-ci.org/japaric/m)
-
-[travis]: https://travis-ci.org/japaric/m.svg?branch=master
+[![Build status](https://ci.appveyor.com/api/projects/status/o3qojtmjusalua01?svg=true)](https://ci.appveyor.com/project/japaric/m)
+[![Build status](https://travis-ci.org/japaric/m.svg?branch=master)](https://travis-ci.org/japaric/m)
+[![crates.io](https://img.shields.io/crates/d/m.svg)](https://crates.io/crates/m)
+[![crates.io](https://img.shields.io/crates/v/m.svg)](https://crates.io/crates/m)
 
 # `m`
 
