@@ -64,10 +64,8 @@ pub extern "C" fn atanf(mut x: f32) -> f32 {
         // |x| < 7/16
         if ix < 0x3ee00000 {
             // |x| < 2**-12
-            if ix < 0x39800000 {
-                if HUGE + x > 1. {
-                    return x;
-                }
+            if ix < 0x39800000 && HUGE + x > 1. {
+                return x;
             }
 
             id = -1;
@@ -84,17 +82,16 @@ pub extern "C" fn atanf(mut x: f32) -> f32 {
                     id = 1;
                     x = (x - 1.) / (x + 1.);
                 }
+            } else if ix < 0x401c0000 {
+                // |x| < 39/16
+                id = 2;
+                x = (x - 1.5) / (1. + 1.5 * x);
             } else {
-                if ix < 0x401c0000 {
-                    // |x| < 39/16
-                    id = 2;
-                    x = (x - 1.5) / (1. + 1.5 * x);
-                } else {
-                    // 39/16 <= |x| < 2**26
-                    id = 3;
-                    x = -1. / x;
-                }
+                // 39/16 <= |x| < 2**26
+                id = 3;
+                x = -1. / x;
             }
+
         }
 
         let z = x * x;
@@ -132,6 +129,10 @@ pub extern "C" fn atan2(_: f64, _: f64) -> f64 {
 }
 
 pub extern "C" fn atan2f(y: f32, x: f32) -> f32 {
+    #![allow(many_single_char_names)]
+    // False positive
+    #![allow(if_same_then_else)]
+
     use core::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 
     const TINY: f32 = 1e-30;
@@ -169,67 +170,66 @@ pub extern "C" fn atan2f(y: f32, x: f32) -> f32 {
             } else {
                 FRAC_PI_2 + TINY
             }
-        } else {
+        } else if ix == 0x7f800000 {
             // x = INF
-            if ix == 0x7f800000 {
-                if iy == 0x7f800000 {
-                    match m {
-                        // atan(+INF, +INF)
-                        0 => FRAC_PI_4 + TINY,
-                        // atan(-INF, +INF)
-                        1 => -FRAC_PI_4 - TINY,
-                        // atan(+INF, -INF)
-                        2 => 3. * FRAC_PI_4 + TINY,
-                        // atan(-INF, -INF)
-                        _ => -3. * FRAC_PI_4 - TINY,
-                    }
-                } else {
-                    match m {
-                        // atan(+.., +INF)
-                        0 => 0.,
-                        // atan(-.., +INF)
-                        1 => -0.,
-                        // atan(+.., -INF)
-                        2 => PI + TINY,
-                        // atan(-.., -INF)
-                        _ => -PI - TINY,
-                    }
-                }
-            } else if iy == 0x7f800000 {
-                // y = +-INF
-                if hy < 0 {
-                    -FRAC_PI_2 - TINY
-                } else {
-                    FRAC_PI_2 + TINY
+            if iy == 0x7f800000 {
+                match m {
+                    // atan(+INF, +INF)
+                    0 => FRAC_PI_4 + TINY,
+                    // atan(-INF, +INF)
+                    1 => -FRAC_PI_4 - TINY,
+                    // atan(+INF, -INF)
+                    2 => 3. * FRAC_PI_4 + TINY,
+                    // atan(-INF, -INF)
+                    _ => -3. * FRAC_PI_4 - TINY,
                 }
             } else {
-                let k = (iy - ix) >> 23;
-
-                // compute y/x
-                let z = if k > 26 {
-                    // |y/x| > 2**26
-                    m &= 1;
-                    FRAC_PI_2 + 0.5 * PI_LO
-                } else if k < -26 && hx < 0 {
-                    // 0 > |y|/x > -2**26
-                    0.
-                } else {
-                    // safe to do
-                    atanf(fabsf(y / x))
-                };
-
                 match m {
-                    // atan(+, +)
-                    0 => z,
-                    // atan(-, +)
-                    1 => -z,
-                    // atan(+, -)
-                    2 => PI - (z - PI_LO),
-                    // atan(-, -)
-                    _ => (z - PI_LO) - PI,
+                    // atan(+.., +INF)
+                    0 => 0.,
+                    // atan(-.., +INF)
+                    1 => -0.,
+                    // atan(+.., -INF)
+                    2 => PI + TINY,
+                    // atan(-.., -INF)
+                    _ => -PI - TINY,
                 }
             }
+        } else if iy == 0x7f800000 {
+            // y = +-INF
+            if hy < 0 {
+                -FRAC_PI_2 - TINY
+            } else {
+                FRAC_PI_2 + TINY
+            }
+        } else {
+            let k = (iy - ix) >> 23;
+
+            // compute y/x
+            let z = if k > 26 {
+                // |y/x| > 2**26
+                m &= 1;
+                FRAC_PI_2 + 0.5 * PI_LO
+            } else if k < -26 && hx < 0 {
+                // 0 > |y|/x > -2**26
+                0.
+            } else {
+                // safe to do
+                atanf(fabsf(y / x))
+            };
+
+            match m {
+                // atan(+, +)
+                0 => z,
+                // atan(-, +)
+                1 => -z,
+                // atan(+, -)
+                2 => PI - (z - PI_LO),
+                // atan(-, -)
+                _ => (z - PI_LO) - PI,
+            }
         }
+
     }
 }
 

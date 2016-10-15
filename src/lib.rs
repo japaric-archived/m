@@ -1,8 +1,8 @@
 //! A C free / pure Rust mathematical library ("libm") for `no_std` code
 //!
-//! This is a port of [OpenLibm].
+//! This is a port of [`OpenLibm`].
 //!
-//! [OpenLibm]: https://github.com/JuliaLang/openlibm
+//! [`OpenLibm`]: https://github.com/JuliaLang/openlibm
 //!
 //! # Usage
 //!
@@ -32,6 +32,7 @@
 //! - `fabs`
 //! - `fabsf`
 
+#![allow(unknown_lints)]
 #![cfg_attr(not(test), no_std)]
 #![deny(warnings)]
 
@@ -105,6 +106,8 @@ macro_rules! float {
             }
 
             fn is_nan(self) -> bool {
+                #![allow(eq_op)]
+
                 self != self
             }
         }
@@ -197,7 +200,7 @@ macro_rules! float_ext {
             }
 
             fn sign_mask() -> Self::Int {
-                (1 << Self::bits() - 1) - 1
+                (1 << (Self::bits() - 1)) - 1
             }
 
             fn significand_bits() -> u32 {
