@@ -1,6 +1,5 @@
 //! Bindings to libm (only for testing)
 
-#[link(name = "m")]
 extern "C" {
     // pub fn atan(x: f64) -> f64;
     // pub fn atan2(y: f64, x: f64) -> f64;
