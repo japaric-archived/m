@@ -1,7 +1,7 @@
 cache: cargo
 dist: trusty
 language: rust
-rust: nightly
+rust: stable
 services: docker
 sudo: required
 

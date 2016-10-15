@@ -1,6 +1,6 @@
 environment:
   global:
-    RUST_VERSION: nightly
+    RUST_VERSION: stable
   matrix:
     # NOTE(msvc) linker error "unresolved external symbol _atan2f"
     # - TARGET: i586-pc-windows-msvc
