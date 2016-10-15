@@ -6,6 +6,10 @@
 //!
 //! # Usage
 //!
+//! Currently, this crate only provides a `Float` extension trait that's very similar to the one in
+//! std but its method are implemented in pure Rust instead of its methods being wrappers over the
+//! system libm. For this reason, this trait is usable in C free, `no_std` environments.
+//!
 //! ```
 //! #![no_std]
 //!
@@ -15,6 +19,9 @@
 //!     x.atan()
 //! }
 //! ```
+//!
+//! Mind you that, at the moment, this extension trait only provides a handful of mathematical
+//! functions -- only the ones that have been ported to Rust.
 //!
 //! # Coverage
 //!
@@ -51,11 +58,10 @@ mod ll;
 ///
 /// # Fine print
 ///
-/// This is meant to be a "closed" extension trait that's not meant to be
-/// implemented by downstream users. As such this trait is *exempted* from
-/// semver rules in the context of *adding* new methods to it. Therefore: if
-/// you implement this trait (don't do that), your code may (will!) break during
-/// a minor version bump. You have been warned!
+/// This trait is meant to be a "closed" extension trait that's not meant to be implemented by
+/// downstream users. As such this trait is *exempted* from semver rules in the context of *adding*
+/// new methods to it. Therefore: if you implement this trait (don't do that), your code may (will!)
+/// break during a minor version bump. You have been warned!
 pub trait Float {
     /// Computes the absolute value of `self`. Returns `NAN` if the number is `NAN`.
     fn abs(self) -> Self;

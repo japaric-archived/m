@@ -127,11 +127,11 @@ macro_rules! fabs {
 fabs!(fabs, f64);
 fabs!(fabsf, f32);
 
-pub extern fn atan2(_: f64, _: f64) -> f64 {
+pub extern "C" fn atan2(_: f64, _: f64) -> f64 {
     unimplemented!()
 }
 
-pub extern fn atan2f(y: f32, x: f32) -> f32 {
+pub extern "C" fn atan2f(y: f32, x: f32) -> f32 {
     use core::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
 
     const TINY: f32 = 1e-30;
@@ -141,7 +141,7 @@ pub extern fn atan2f(y: f32, x: f32) -> f32 {
     let hy = y.repr() as i32;
     let ix = hx & 0x7fffffff;
     let iy = hy & 0x7fffffff;
-    
+
     if ix > 0x7f800000 || iy > 0x7f800000 {
         // x or y is NaN
         x + y
