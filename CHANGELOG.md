@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.1.1] - 2016-10-19
+
 ### Added
 
 - generic `sqrtf`
@@ -17,4 +19,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - generic `atan2f`, `atanf` `fabs`, `fasbf`
 
-[Unreleased]: https://github.com/japaric/m/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/japaric/m/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/japaric/m/compare/v0.1.0...v0.1.1

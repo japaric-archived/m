@@ -6,7 +6,7 @@ keywords = ["float", "math", "libm", "no_std"]
 license = "BSD-2-Clause AND ISC AND MIT"
 name = "m"
 repository = "https://github.com/japaric/m"
-version = "0.1.0"
+version = "0.1.1"
 
 [dev-dependencies]
 quickcheck = "0.3.1"
