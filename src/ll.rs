@@ -252,9 +252,9 @@ pub extern "C" fn sqrtf(x: f32) -> f32 {
         // sqrt(+0) -> +0
         0x0000_0000 => x,
         // sqrt(-0) -> -0
-        #[cfg(not(all(env = "gnu", os = "windows")))]
+        #[cfg(not(all(target_env = "gnu", target_os = "windows")))]
         _ if ix as u32 == 0x8000_0000 => x,
-        #[cfg(all(env = "gnu", os = "windows"))]
+        #[cfg(all(target_env = "gnu", target_os = "windows"))]
         _ if ix as u32 == 0x8000_0000 => (x - x) / (x - x),
         // sqrt(-X) = sNaN
         _ if ix < 0 => (x - x) / (x - x),
