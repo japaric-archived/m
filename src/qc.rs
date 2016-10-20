@@ -11,55 +11,57 @@ macro_rules! check {
             $($code:tt)*
         }
     )+) => {
-            mod tests {
-                use std::mem;
+        mod tests {
+            use std::mem;
 
-                use quickcheck::TestResult;
+            use quickcheck::TestResult;
 
-                use FloatExt;
-                use qc::*;
+            use FloatExt;
+            use qc::*;
 
-                $(
-                    #[test]
-                    fn $name() {
-                        fn check($($arg: $t),+) -> TestResult {
-                            fn $name($f: extern fn($($farg),+) -> $fret,
-                                     $($arg:$t),+)
-                                     -> Option<$ret> {
-                                $($code)*
-                            }
-
-                            let our_answer = $name(super::$name, $($arg),+);
-                            let libm_f: unsafe extern fn($($farg),+) -> $fret = ::m::$name;
-                            let libm_answer = $name(unsafe { mem::transmute(libm_f) }, $($arg),+);
-
-                            if our_answer.is_none() {
-                                return TestResult::discard();
-                            }
-
-                            let our_answer = our_answer.unwrap();
-                            let libm_answer = libm_answer.unwrap();
-
-                            let print_values = || {
-                                print!("\r{} - Args: ", stringify!($name));
-                                $(print!("{} = {:?} ", stringify!($arg), $arg);)+
-                                    print!("\n");
-                                println!("  us:   {:?}", our_answer);
-                                println!("  libm: {:?}", libm_answer);
-                            };
-
-                            if !our_answer.0.eq_repr(libm_answer.0) {
-                                print_values();
-                                TestResult::from_bool(false)
-                            } else {
-                                TestResult::from_bool(true)
-                            }
+            $(
+                #[test]
+                fn $name() {
+                    fn check($($arg: $t),+) -> TestResult {
+                        fn $name($f: extern fn($($farg),+) -> $fret,
+                                 $($arg:$t),+)
+                                 -> Option<$ret> {
+                            $($code)*
                         }
 
-                        ::quickcheck::quickcheck(check as fn($($t),*) -> TestResult)
+                        let our_answer = $name(super::$name, $($arg),+);
+                        let libm_f: unsafe extern "C" fn($($farg),+) -> $fret =
+                            ::m::$name;
+                        let libm_answer =
+                            $name(unsafe { mem::transmute(libm_f) }, $($arg),+);
+
+                        if our_answer.is_none() {
+                            return TestResult::discard();
+                        }
+
+                        let our_answer = our_answer.unwrap();
+                        let libm_answer = libm_answer.unwrap();
+
+                        let print_values = || {
+                            print!("\r{} - Args: ", stringify!($name));
+                            $(print!("{} = {:?} ", stringify!($arg), $arg);)+
+                                print!("\n");
+                            println!("  us:   {:?}", our_answer);
+                            println!("  libm: {:?}", libm_answer);
+                        };
+
+                        if !our_answer.0.eq_repr(libm_answer.0) {
+                            print_values();
+                            TestResult::from_bool(false)
+                        } else {
+                            TestResult::from_bool(true)
+                        }
                     }
-                )+
-            }
+
+                    ::quickcheck::quickcheck(check as fn($($t),*) -> TestResult)
+                }
+            )+
+        }
     }
 }
 
@@ -87,7 +89,8 @@ macro_rules! arbitrary_float {
             fn arbitrary<G>(g: &mut G) -> $ty
                 where G: Gen
             {
-                let special = [-0.0, 0.0, $fty::NAN, $fty::INFINITY, $fty::NEG_INFINITY];
+                let special =
+                    [-0.0, 0.0, $fty::NAN, $fty::INFINITY, $fty::NEG_INFINITY];
 
                 let (sign, mut exponent, mut significand) = g.gen();
                 if g.gen_weighted_bool(10) {
@@ -100,7 +103,9 @@ macro_rules! arbitrary_float {
                     exponent = 0;
                 }
 
-                $ty($fty::from_parts(Sign::from_bool(sign), exponent, significand))
+                $ty($fty::from_parts(Sign::from_bool(sign),
+                                     exponent,
+                                     significand))
             }
         }
     }

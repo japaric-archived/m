@@ -6,9 +6,10 @@
 //!
 //! # Usage
 //!
-//! Currently, this crate only provides a `Float` extension trait that's very similar to the one in
-//! std but its method are implemented in pure Rust instead of its methods being wrappers over the
-//! system libm. For this reason, this trait is usable in C free, `no_std` environments.
+//! Currently, this crate only provides a `Float` extension trait that's very
+//! similar to the one in std but its method are implemented in pure Rust
+//! instead of its methods being wrappers over the system libm. For this reason,
+//! this trait is usable in C free, `no_std` environments.
 //!
 //! ```
 //! #![no_std]
@@ -20,8 +21,8 @@
 //! }
 //! ```
 //!
-//! Mind you that, at the moment, this extension trait only provides a handful of mathematical
-//! functions -- only the ones that have been ported to Rust.
+//! Mind you that, at the moment, this extension trait only provides a handful
+//! of mathematical functions -- only the ones that have been ported to Rust.
 //!
 //! # Coverage
 //!
@@ -59,15 +60,18 @@ mod ll;
 ///
 /// # Fine print
 ///
-/// This trait is meant to be a "closed" extension trait that's not meant to be implemented by
-/// downstream users. As such this trait is *exempted* from semver rules in the context of *adding*
-/// new methods to it. Therefore: if you implement this trait (don't do that), your code may (will!)
-/// break during a minor version bump. You have been warned!
+/// This trait is meant to be a "closed" extension trait that's not meant to be
+/// implemented by downstream users. As such this trait is *exempted* from
+/// semver rules in the context of *adding* new methods to it. Therefore: if you
+/// implement this trait (don't do that), your code may (will!) break during a
+/// minor version bump. You have been warned!
 pub trait Float {
-    /// Computes the absolute value of `self`. Returns `NAN` if the number is `NAN`.
+    /// Computes the absolute value of `self`. Returns `NAN` if the number is
+    /// `NAN`.
     fn abs(self) -> Self;
 
-    /// Computes the arctangent of a number. Return value is in radians in the range `[-pi/2, pi/2]`
+    /// Computes the arctangent of a number. Return value is in radians in the
+    /// range `[-pi/2, pi/2]`
     fn atan(self) -> Self;
 
     /// Computes the four quadrant arctangent of `self` (`y`) and `other` (`x`)
@@ -78,8 +82,8 @@ pub trait Float {
     /// - `y < 0`: `arctan(y / x) - pi` -> `(-pi, -pi/2)`
     fn atan2(self, Self) -> Self;
 
-    /// Returns `true` if this value is positive infinity or negative infinity and `false`
-    /// otherwise.
+    /// Returns `true` if this value is positive infinity or negative infinity
+    /// and `false` otherwise.
     fn is_infinite(self) -> bool;
 
     /// Returns `true` if this value is `NaN` and `false` otherwise.
@@ -87,7 +91,10 @@ pub trait Float {
 }
 
 macro_rules! float {
-    ($ty:ident, atan = $atan:ident, atan2 = $atan2:ident, fabs = $fabs:ident) => {
+    ($ty:ident,
+     atan = $atan:ident,
+     atan2 = $atan2:ident,
+     fabs = $fabs:ident) => {
         impl Float for $ty {
             fn abs(self) -> Self {
                 ll::$fabs(self)
@@ -128,7 +135,10 @@ trait FloatExt {
     fn exponent_bias() -> u32;
     fn exponent_bits() -> u32;
     fn exponent_mask() -> Self::Int;
-    fn from_parts(sign: Sign, exponent: Self::Int, significand: Self::Int) -> Self;
+    fn from_parts(sign: Sign,
+                  exponent: Self::Int,
+                  significand: Self::Int)
+                  -> Self;
     fn from_repr(Self::Int) -> Self;
     fn repr(self) -> Self::Int;
     fn sign(self) -> Sign;
@@ -156,13 +166,15 @@ macro_rules! float_ext {
                 } else {
                     let (lhs, rhs) = (self.repr(), rhs.repr());
 
-                    lhs == rhs || (lhs > rhs && lhs - rhs == 1) || (rhs > lhs && rhs - lhs == 1)
+                    lhs == rhs || (lhs > rhs && lhs - rhs == 1) ||
+                    (rhs > lhs && rhs - lhs == 1)
                 }
             }
 
             fn exponent(self) -> i16 {
-                ((self.repr() & Self::exponent_mask()) >> Self::significand_bits()) as i16 -
-                    Self::exponent_bias() as i16
+                ((self.repr() & Self::exponent_mask()) >>
+                 Self::significand_bits()) as i16 -
+                Self::exponent_bias() as i16
             }
 
             fn exponent_bias() -> u32 {
@@ -177,7 +189,9 @@ macro_rules! float_ext {
                 ((1 << Self::exponent_bits()) - 1) << Self::significand_bits()
             }
 
-            fn from_parts(sign: Sign, exponent: Self::Int, significand: Self::Int) -> Self {
+            fn from_parts(sign: Sign,
+                          exponent: Self::Int,
+                          significand: Self::Int) -> Self {
                 Self::from_repr(sign.$repr_ty() |
                                 exponent & Self::exponent_mask() |
                                 significand & Self::significand_mask())
