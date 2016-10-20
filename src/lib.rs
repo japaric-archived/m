@@ -88,13 +88,19 @@ pub trait Float {
 
     /// Returns `true` if this value is `NaN` and `false` otherwise.
     fn is_nan(self) -> bool;
+
+    /// Takes the square root of a number
+    ///
+    /// Returns `NaN` if `self` is a negative number
+    fn sqrt(self) -> Self;
 }
 
 macro_rules! float {
     ($ty:ident,
      atan = $atan:ident,
      atan2 = $atan2:ident,
-     fabs = $fabs:ident) => {
+     fabs = $fabs:ident,
+     sqrt = $sqrt:ident) => {
         impl Float for $ty {
             fn abs(self) -> Self {
                 ll::$fabs(self)
@@ -117,13 +123,21 @@ macro_rules! float {
 
                 self != self
             }
+
+            fn sqrt(self) -> Self {
+                ll::$sqrt(self)
+            }
         }
 
     }
 }
 
-float!(f32, atan = atanf, atan2 = atan2f, fabs = fabsf);
-float!(f64, atan = atan, atan2 = atan2, fabs = fabs);
+float!(f32,
+       atan = atanf,
+       atan2 = atan2f,
+       fabs = fabsf,
+       sqrt = sqrtf);
+float!(f64, atan = atan, atan2 = atan2, fabs = fabs, sqrt = sqrt);
 
 trait FloatExt {
     type Int;

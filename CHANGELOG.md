@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- generic `sqrtf`
+
 ## v0.1.0 - 2016-10-15
 
 ### Added

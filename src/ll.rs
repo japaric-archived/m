@@ -233,6 +233,105 @@ pub extern "C" fn atan2f(y: f32, x: f32) -> f32 {
     }
 }
 
+pub extern "C" fn sqrt(_: f64) -> f64 {
+    unimplemented!()
+}
+
+pub extern "C" fn sqrtf(x: f32) -> f32 {
+    #![allow(many_single_char_names)]
+    #![allow(eq_op)]
+
+    const ONE: f32 = 1.;
+    const SIGN: u32 = 0x80000000;
+    const TINY: f32 = 1.0e-30;
+
+    let mut ix = x.repr() as i32;
+
+    // take care of Inf and NaN
+    if ix & 0x7f800000 == 0x7f800000 {
+        return x * x + x;
+    }
+
+    if ix <= 0 {
+        if ix & (!SIGN) as i32 == 0 {
+            // sqrt(+-0) = +-0
+            return x;
+        } else if ix < 0 {
+            // sqrt(ve) = sNaN
+            return (x - x) / (x - x);
+        }
+    }
+
+    // normalize
+    let mut m = ix >> 23;
+
+    if m == 0 {
+        // subnormal
+        let mut i = 0;
+        while ix & 0x00800000 == 0 {
+            ix <<= 1;
+            i += 1;
+        }
+
+        m -= i - 1;
+    }
+
+    // unbias exponent
+    m -= 127;
+    ix = (ix & 0x007fffff) | 0x00800000;
+
+    // oddm, double x to make it even
+    if m & 1 != 0 {
+        ix += ix;
+    }
+
+    // m = [m / 2]
+    m >>= 1;
+
+    // generate sqrt(x) bit by bit
+    ix += ix;
+    // q = sqrt(x)
+    let mut q = 0;
+    let mut s = 0;
+    // r = moving bit from right to left
+    let mut r = 0x01000000;
+
+    let mut t;
+    while r != 0 {
+        t = s + r;
+
+        if t <= ix {
+            s = t + r;
+            ix -= t;
+            q += r;
+        }
+
+        ix += ix;
+        r >>= 1;
+    }
+
+    // use floating add to find out rounding direction
+    if ix != 0 {
+        // trigger inexact flag
+        let mut z = ONE - TINY;
+
+        if z >= ONE {
+            z = ONE + TINY;
+        }
+
+        if z > ONE {
+            q += 2;
+        } else {
+            q += q & 1;
+        }
+    }
+
+    ix = (q >> 1) + 0x3f000000;
+    ix += m << 23;
+
+    f32::from_repr(ix as u32)
+}
+
 #[cfg(test)]
 check! {
     // `atan` has not been implemented yet
@@ -258,6 +357,15 @@ check! {
     }
 
     fn fabsf(f: extern fn(f32) -> f32, x: F32) -> Option<F32> {
+        Some(F32(f(x.0)))
+    }
+
+    // unimplemented!
+    // fn sqrt(f: extern fn(f64) -> f64, x: F64) -> Option<F64> {
+    //     Some(F64(f(x.0)))
+    // }
+
+    fn sqrtf(f: extern fn(f32) -> f32, x: F32) -> Option<F32> {
         Some(F32(f(x.0)))
     }
 }
