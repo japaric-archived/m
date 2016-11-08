@@ -31,8 +31,11 @@ matrix:
       rust: nightly
     - env: TARGET=mipsel-unknown-linux-gnu
     - env: TARGET=powerpc-unknown-linux-gnu
+      # FIXME(beta) binary release missing. return to the stable channel by 1.13
     - env: TARGET=powerpc64-unknown-linux-gnu
+      rust: beta
     - env: TARGET=powerpc64le-unknown-linux-gnu
+      rust: beta
     - env: TARGET=s390x-unknown-linux-gnu
       rust: nightly
 
