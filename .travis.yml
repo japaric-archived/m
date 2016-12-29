@@ -1,13 +1,8 @@
-cache: cargo
 dist: trusty
 language: rust
 rust: stable
 services: docker
 sudo: required
-
-env:
-  global:
-    - TARGET=x86_64-unknown-linux-gnu
 
 matrix:
   include:
@@ -19,42 +14,30 @@ matrix:
 
     # Linux
     - env: TARGET=aarch64-unknown-linux-gnu
-    - env: TARGET=arm-unknown-linux-gnueabi
-    - env: TARGET=arm-unknown-linux-gnueabihf
     - env: TARGET=armv7-unknown-linux-gnueabihf
-    - env: TARGET=i586-unknown-linux-gnu
     - env: TARGET=i686-unknown-linux-gnu
     - env: TARGET=mips-unknown-linux-gnu
     - env: TARGET=mips64-unknown-linux-gnuabi64
-      rust: nightly
     - env: TARGET=mips64el-unknown-linux-gnuabi64
-      rust: nightly
     - env: TARGET=mipsel-unknown-linux-gnu
     - env: TARGET=powerpc-unknown-linux-gnu
-      # FIXME(beta) binary release missing. return to the stable channel by 1.13
     - env: TARGET=powerpc64-unknown-linux-gnu
-      rust: beta
     - env: TARGET=powerpc64le-unknown-linux-gnu
-      rust: beta
     - env: TARGET=s390x-unknown-linux-gnu
-      rust: nightly
+env: TARGET=x86_64-unknown-linux-gnu
 
 install:
-  # `std for cross-compilation
-  - curl https://static.rust-lang.org/rustup.sh |
-    sh -s -- --add-target=$TARGET --disable-sudo -y --prefix=`rustc --print sysroot`
-  # For transparent QEMU user emulation
-  - test $TRAVIS_OS_NAME = osx ||
-    docker run --privileged --rm -it ubuntu:16.04 sh -c
-    "apt-get update && apt-get install -qq binfmt-support qemu-user-static"
+  - curl https://sh.rustup.rs -sSf |
+    sh -s -- -y --default-toolchain $TRAVIS_RUST_VERSION;
+  - source ~/.cargo/env
+  - curl -sf "https://japaric.github.io/trust/install.sh" |
+    sh -s -- --git japaric/cross --tag v0.1.1 --target x86_64-unknown-linux-musl --to ~/.cargo/bin
 
 script:
-  - cargo generate-lockfile
-  - if [[ $TRAVIS_OS_NAME = linux ]]; then
-      sh ci/run-docker.sh $TARGET;
-    else
-      sh ci/run.sh;
-    fi
+  - sh ci/script.sh
+
+cache: cargo
+before_cache:
   # Travis can't cache files that are not readable by "others"
   - chmod -R a+r $HOME/.cargo
 
