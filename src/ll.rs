@@ -233,8 +233,132 @@ pub extern "C" fn atan2f(y: f32, x: f32) -> f32 {
     }
 }
 
-pub extern "C" fn sqrt(_: f64) -> f64 {
-    unimplemented!()
+/// Get two 32-bit ints from an f64.
+fn extract_words(d: f64) -> (i32, u32) {
+    let msw = (d.repr() >> 32) as i32;
+    let lsw = d.repr() as u32;
+    (msw, lsw)
+}
+
+/// Construct an f64 from two 32-bit ints.
+fn insert_words(msw: i32, lsw: u32) -> f64 {
+    f64::from_repr((msw as u64) << 32 | (lsw as u64))
+}
+
+pub extern "C" fn sqrt(x: f64) -> f64 {
+    const ONE: f64 = 1.;
+    const TINY: f64 = 1.0e-300;
+
+    let sign: i32 = 0x8000_0000u32 as i32;
+
+    let (mut ix0, mut ix1) = extract_words(x);
+
+    // Take care of Inf and NaN.
+    if ix0 & 0x7ff0_0000 == 0x7ff0_0000 {
+        return x * x + x
+    }
+    // Take care of zero.
+    if ix0 <= 0 {
+        if (ix0 & (!sign)) | (ix1 as i32) == 0 {
+            return x;
+        } else if ix0 < 0 {
+            return (x - x) / (x - x);
+        }
+    }
+    // Normalize x.
+    let mut m: i32 = ix0 >> 20;
+    if m == 0 {  // subnormal x
+        while ix0 == 0 {
+            m -= 21;
+            ix0 |= (ix1 as i32) >> 11;
+            ix1 <<= 1;
+        }
+        let mut i: i32 = 0;
+        while ix0 & 0x0010_0000 == 0 {
+            ix0 <<= 1;
+            i += 1;
+        }
+        m -= i - 1;
+        ix0 |= (ix1 as i32) >> 32 - i;
+        ix1 <<= 1;
+    }
+    m -= 1023;  // unbias exponent
+    ix0 = (ix0 & 0x000f_ffff) | 0x0010_0000;
+    if m & 1 != 0 {  // odd m, double x to make it even
+        ix0 += ix0 + (((ix1 as i32) & sign) >> 31);
+        ix1 = ix1.wrapping_add(ix1);
+    }
+    m >>= 1;
+
+    // Generate sqrt(x) bit by bit.
+    ix0 += ix0 + (((ix1 as i32) & sign) >> 31);
+    ix1 = ix1.wrapping_add(ix1);
+    let mut q: i32 = 0;
+    let mut q1: u32 = 0;
+    let mut s0: i32 = 0;
+    let mut s1: u32 = 0;
+    let mut r: u32 = 0x0020_0000;
+    let mut t: i32;
+
+    while r != 0 {
+        t = s0 + (r as i32);
+        if t <= ix0 {
+            s0 = t + (r as i32);
+            ix0 -= t;
+            q += r as i32;
+        }
+        ix0 += ix0 + (((ix1 as i32) & sign) >> 31);
+        ix1 = ix1.wrapping_add(ix1);
+        r >>= 1;
+    }
+
+    r = sign as u32;
+    while r != 0 {
+        let t1 = s1 + r;
+        t = s0;
+        if (t < ix0) || ((t == ix0) && (t1 <= ix1)) {
+            s1 = t1.wrapping_add(r);
+            if (((t1 as i32) & sign) == sign) && ((s1 as i32) & sign) == 0 {
+                s0 += 1;
+            }
+            ix0 -= t;
+            if ix1 < t1 {
+                ix0 -= 1;
+            }
+            ix1 = ix1.wrapping_sub(t1);
+            q1 += r;
+        }
+        ix0 += ix0 + (((ix1 as i32) & sign) >> 31);
+        ix1 = ix1.wrapping_add(ix1);
+        r >>= 1;
+    }
+    // Use floating add to find out rounding direction.
+    let mut z: f64;
+    if (ix0 as u32) | ix1 != 0 {
+        z = ONE - TINY;  // trigger inexact flag
+        if z >= 0. {
+            z = ONE + TINY;
+            if q1 == 0xffff_ffff {
+                q1 = 0;
+                q += 1;
+            } else if z > ONE {
+                if q1 == 0xffff_fffe {
+                    q += 1;
+                }
+                q1 += 2;
+            } else {
+                q1 += q1 & 1;
+            }
+        }
+    }
+    ix0 = (q >> 1) + 0x3fe0_0000;
+    ix1 = q1 >> 1;
+    if (q & 1) == 1 {
+        ix1 |= sign as u32;
+    }
+    ix0 += m << 20;
+
+    insert_words(ix0, ix1)
 }
 
 pub extern "C" fn sqrtf(x: f32) -> f32 {
@@ -353,10 +477,9 @@ check! {
         Some(F32(f(x.0)))
     }
 
-    // unimplemented!
-    // fn sqrt(f: extern fn(f64) -> f64, x: F64) -> Option<F64> {
-    //     Some(F64(f(x.0)))
-    // }
+    fn sqrt(f: extern fn(f64) -> f64, x: F64) -> Option<F64> {
+        Some(F64(f(x.0)))
+    }
 
     fn sqrtf(f: extern fn(f32) -> f32, x: F32) -> Option<F32> {
         match () {
@@ -371,6 +494,5 @@ check! {
             #[cfg(not(all(target_env = "gnu", target_os = "windows")))]
             () => Some(F32(f(x.0))),
         }
-        
     }
 }
