@@ -34,7 +34,7 @@
 //! - `fabsf`
 #![allow(unknown_lints)]
 #![cfg_attr(not(test), no_std)]
-//#![deny(warnings)]
+#![deny(warnings)]
 
 #[cfg(test)]
 extern crate core;
@@ -54,7 +54,7 @@ mod m;
 #[macro_use]
 mod qc;
 
-pub mod ll;
+mod ll;
 
 /// Trait that provides mathematical functions for floating point numbers
 ///
