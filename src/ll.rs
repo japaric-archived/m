@@ -1,6 +1,5 @@
 use core::mem;
 
-#[allow(unused_variables)]
 #[cfg(not(test))]
 use Float;
 use {FloatExt, Sign};

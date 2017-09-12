@@ -39,9 +39,9 @@
 #[cfg(test)]
 extern crate core;
 
-//#[macro_use]
 
 #[cfg(test)]
+#[macro_use]
 extern crate quickcheck;
 
 use core::mem;
