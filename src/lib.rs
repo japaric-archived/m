@@ -32,16 +32,16 @@
 //! - `atanf`
 //! - `fabs`
 //! - `fabsf`
-
 #![allow(unknown_lints)]
 #![cfg_attr(not(test), no_std)]
-#![deny(warnings)]
+//#![deny(warnings)]
 
 #[cfg(test)]
 extern crate core;
 
+//#[macro_use]
+
 #[cfg(test)]
-#[macro_use]
 extern crate quickcheck;
 
 use core::mem;
@@ -54,7 +54,7 @@ mod m;
 #[macro_use]
 mod qc;
 
-mod ll;
+pub mod ll;
 
 /// Trait that provides mathematical functions for floating point numbers
 ///
@@ -93,6 +93,17 @@ pub trait Float {
     ///
     /// Returns `NaN` if `self` is a negative number
     fn sqrt(self) -> Self;
+
+
+    /// Returns cos of a number
+    fn cos(self) -> Self;
+
+    /// Returns sin of a number
+    fn sin(self) -> Self;
+
+    fn floor(self) -> Self;
+    fn scalbn(self, other: i32) -> Self;
+    fn copysign(self, other: Self) -> Self;
 }
 
 macro_rules! float {
@@ -100,7 +111,12 @@ macro_rules! float {
      atan = $atan:ident,
      atan2 = $atan2:ident,
      fabs = $fabs:ident,
-     sqrt = $sqrt:ident) => {
+     sqrt = $sqrt:ident,
+     cos = $cos:ident,
+     sin = $sin:ident,
+     floor = $floor:ident,
+     scalbn = $scalbn:ident,
+     copysign = $copysign:ident) => {
         impl Float for $ty {
             fn abs(self) -> Self {
                 ll::$fabs(self)
@@ -127,17 +143,55 @@ macro_rules! float {
             fn sqrt(self) -> Self {
                 ll::$sqrt(self)
             }
+
+            fn cos(self) -> Self {
+                ll::$cos(self)
+            }
+
+            fn sin(self) -> Self {
+                ll::$sin(self)
+            }
+
+            fn floor(self) -> Self {
+                ll::$floor(self)
+            }
+
+            fn scalbn(self, other: i32) -> Self {
+                ll::$scalbn(self, other)
+            }
+
+            fn copysign(self, other: Self) -> Self {
+                ll::$copysign(self, other)
+            }
         }
 
     }
 }
 
-float!(f32,
-       atan = atanf,
-       atan2 = atan2f,
-       fabs = fabsf,
-       sqrt = sqrtf);
-float!(f64, atan = atan, atan2 = atan2, fabs = fabs, sqrt = sqrt);
+float!(
+    f32,
+    atan = atanf,
+    atan2 = atan2f,
+    fabs = fabsf,
+    sqrt = sqrtf,
+    cos = cosf,
+    sin = sinf,
+    floor = floorf,
+    scalbn = scalbnf,
+    copysign = copysignf
+);
+float!(
+    f64,
+    atan = atan,
+    atan2 = atan2,
+    fabs = fabs,
+    sqrt = sqrt,
+    cos = cos,
+    sin = sin,
+    floor = floor,
+    scalbn = scalbn,
+    copysign = copysign
+);
 
 trait FloatExt {
     type Int;
@@ -149,10 +203,7 @@ trait FloatExt {
     fn exponent_bias() -> u32;
     fn exponent_bits() -> u32;
     fn exponent_mask() -> Self::Int;
-    fn from_parts(sign: Sign,
-                  exponent: Self::Int,
-                  significand: Self::Int)
-                  -> Self;
+    fn from_parts(sign: Sign, exponent: Self::Int, significand: Self::Int) -> Self;
     fn from_repr(Self::Int) -> Self;
     fn repr(self) -> Self::Int;
     fn sign(self) -> Sign;
@@ -243,10 +294,12 @@ macro_rules! float_ext {
 }
 
 float_ext!(f32, repr_ty = u32, exponent_bits = 8, significand_bits = 23);
-float_ext!(f64,
-           repr_ty = u64,
-           exponent_bits = 11,
-           significand_bits = 52);
+float_ext!(
+    f64,
+    repr_ty = u64,
+    exponent_bits = 11,
+    significand_bits = 52
+);
 
 #[derive(Eq, PartialEq)]
 enum Sign {
@@ -257,7 +310,11 @@ enum Sign {
 impl Sign {
     #[cfg(test)]
     fn from_bool(x: bool) -> Self {
-        if x { Sign::Negative } else { Sign::Positive }
+        if x {
+            Sign::Negative
+        } else {
+            Sign::Positive
+        }
     }
 
     fn u32(self) -> u32 {
