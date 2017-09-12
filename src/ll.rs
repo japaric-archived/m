@@ -342,10 +342,10 @@ pub extern "C" fn sinf(x: f32) -> f32 {
     use core::f64::consts::FRAC_PI_2;
 
     const S1PIO2: f64 = 1f64 * FRAC_PI_2; /* 0x3FF921FB, 0x54442D18 */
-    const S2PIO2: f64 = 2f64 * FRAC_PI_2; /* 0x400921FB, 0x54442D18 */
+    //const S2PIO2: f64 = 2f64 * FRAC_PI_2; /* 0x400921FB, 0x54442D18 */
     const S3PIO2: f64 = 3f64 * FRAC_PI_2; /* 0x4012D97C, 0x7F3321D2 */
     const S4PIO2: f64 = 4f64 * FRAC_PI_2; /* 0x401921FB, 0x54442D18 */
-    
+
     let hx = x.repr();
 
     let ix = hx & 0x7fffffff;
@@ -386,12 +386,11 @@ pub extern "C" fn sinf(x: f32) -> f32 {
             return sindf(x as f64 + (if hx > 0 { -S4PIO2 } else { S4PIO2 }));
         }
     }
-    /* sin(Inf or NaN) is NaN */
-    else if ix >= 0x7f800000 {
+        /* sin(Inf or NaN) is NaN */ else if ix >= 0x7f800000 {
         return x - x;
 
 
-    /* general argument reduction needed */
+        /* general argument reduction needed */
     } else {
         let (n, y) = ieee754_rem_pio2f(x);
         match n & 3 {
@@ -455,11 +454,10 @@ pub extern "C" fn cosf(x: f32) -> f32 {
             return cosdf(x as f64 + (if hx > 0 { -C4PIO2 } else { C4PIO2 }));
         }
     }
-    /* cos(Inf or NaN) is NaN */
-    else if ix >= 0x7f800000 {
+        /* cos(Inf or NaN) is NaN */ else if ix >= 0x7f800000 {
         return x - x;
 
-    /* general argument reduction needed */
+        /* general argument reduction needed */
     } else {
         let (n, y) = ieee754_rem_pio2f(x);
         match n & 3 {
@@ -647,7 +645,7 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
     let mut fq: [f64; 20] = [0.0; 20];
     let mut q: [f64; 20] = [0.0; 20];
     let mut y: [f64; 3] = [0.0; 3];
-    let mut k: i32 = 0;
+    let mut k: i32;
     let mut z: f64 = 0.0;
     let ih: i32 = 0;
     let n: i32 = 0;
@@ -658,11 +656,11 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
 
     /* determine jx,jv,q0, note that 3>q0 */
     let jx: i32 = nx - 1;
-    let mut jv: i32 = ((e0 - 3) / 24);
+    let mut jv: i32 = (e0 - 3) / 24;
     if jv < 0 {
         jv = 0;
     }
-    let mut q0: i32 = (e0 - 24 * (jv + 1));
+    let mut q0: i32 = e0 - 24 * (jv + 1);
 
     /* set up f[0] to f[jx+jk] where f[jx+jk] = ipio2[jv+jk] */
     let mut j = jv - jx;
@@ -679,7 +677,7 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
     }
 
     i = 0;
-    let mut fw: f64 = 0.0;
+    let mut fw: f64;
     /* compute q[0],q[1],...q[jk] */
     while i <= jk {
         j = 0;
@@ -712,13 +710,13 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
         /* compute n */
         z = scalbn(z, q0); /* actual value of z */
         z -= 8.0 * floor(z * 0.125_f64); /* trim off integer >= 8 */
-        let mut n = z as i32;
+        let n = z as i32;
         z -= n as f64;
         let mut ih = 0;
         if q0 > 0 {
             /* need iq[jz-1] to determine n */
             i = (iq[jz as usize - 1] >> (24 - q0)) as i32;
-            n += i;
+            //n += i;
             iq[jz as usize - 1] -= (i << (24 - q0)) as i32;
             ih = iq[jz as usize - 1] >> (23 - q0);
         } else if q0 == 0 {
@@ -729,7 +727,7 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
 
         if ih > 0 {
             /* q > 0.5 */
-            n += 1;
+            //n += 1;
             let mut carry = 0;
             i = 0;
             while i < jz {
@@ -909,67 +907,67 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
 }
 
 pub extern "C" fn floor(x: f64) -> f64 {
+    #![allow(overflowing_literals)]
     const HUGE: f64 = 1.0e300;
     let mut i0 = (x.repr() >> 32) as i32;
     let mut i1 = x.repr() as u32;
-    let mut i: u32 = 0;
-    let mut j: u32 = 0;
+    let i: u32;
+    let j: u32;
 
-    let j0:i32 = (((i0 >> 20) & 0x7ff) - 0x3ff);
-    if (j0 < 20) {
-        if (j0 < 0) {
+    let j0: i32 = ((i0 >> 20) & 0x7ff) - 0x3ff;
+    if j0 < 20 {
+        if j0 < 0 {
             /* raise inexact if x != 0 */
-            if (HUGE + x > 0.0) {
+            if HUGE + x > 0.0 {
                 /* return 0*sign(x) if |x|<1 */
-                if (i0 >= 0) {
+                if i0 >= 0 {
                     i0 = 0;
                     i1 = 0;
-                } else if ((((i0 & 0x7fffffff) as u32) | i1) != 0) {
+                } else if (((i0 & 0x7fffffff) as u32) | i1) != 0 {
                     i0 = 0xbff00000;
                     i1 = 0;
                 }
             }
         } else {
             i = 0x000fffff >> j0;
-            if ((((i0 & i as i32) as u32) | i1) == 0) {
+            if (((i0 & i as i32) as u32) | i1) == 0 {
                 return x;
             } /* x is integral */
-            if (HUGE + x > 0.0) {
+            if HUGE + x > 0.0 {
                 /* raise inexact flag */
-                if (i0 < 0) {
+                if i0 < 0 {
                     i0 += (0x00100000) >> j0;
                 }
-                i0 &= (!(i as i32));
+                i0 &= !(i as i32);
                 i1 = 0;
             }
         }
-    } else if (j0 > 51) {
-        if (j0 == 0x400) {
+    } else if j0 > 51 {
+        if j0 == 0x400 {
             return x + x;
         }
-        /* inf or NaN */
-        else {
+            /* inf or NaN */ else {
             return x;
         } /* x is integral */
     } else {
         i = 0xffffffff as u32 >> (j0 - 20);
-        if ((i1 & i) == 0) {
+        if (i1 & i) == 0 {
             return x;
         } /* x is integral */
-        if (HUGE + x > 0.0) {
+        if HUGE + x > 0.0 {
             /* raise inexact flag */
-            if (i0 < 0) {
-                if (j0 == 20) {
+            if i0 < 0 {
+                if j0 == 20 {
                     i0 += 1;
                 } else {
                     j = (i1 as u32 + (1u32 << (52 - j0 as u32))) as u32;
-                    if (j < i1) {
+                    if j < i1 {
                         i0 += 1;
                     } /* got a carry */
                     i1 = j;
                 }
             }
-            i1 &= (!i);
+            i1 &= !i;
         }
     }
 
@@ -977,6 +975,7 @@ pub extern "C" fn floor(x: f64) -> f64 {
 }
 
 pub extern "C" fn floorf(x: f32) -> f32 {
+    #![allow(overflowing_literals)]
     const HUGE: f32 = 1.0e30;
     let mut i0 = x.repr() as i32;
     //let j0: u32;
@@ -1010,7 +1009,7 @@ pub extern "C" fn floorf(x: f32) -> f32 {
                 if i0 < 0 {
                     i0 += (0x00800000) >> j0;
                 }
-                i0 &= (!i);
+                i0 &= !i;
             }
         }
     } else {
