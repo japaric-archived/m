@@ -337,16 +337,15 @@ pub extern "C" fn sin(_: f64) -> f64 {
     unimplemented!()
 }
 
-
 pub extern "C" fn sinf(x: f32) -> f32 {
     use core::f64::consts::FRAC_PI_2;
 
     const S1PIO2: f64 = 1f64 * FRAC_PI_2; /* 0x3FF921FB, 0x54442D18 */
-    //const S2PIO2: f64 = 2f64 * FRAC_PI_2; /* 0x400921FB, 0x54442D18 */
+    const S2PIO2: f64 = 2f64 * FRAC_PI_2; /* 0x400921FB, 0x54442D18 */
     const S3PIO2: f64 = 3f64 * FRAC_PI_2; /* 0x4012D97C, 0x7F3321D2 */
     const S4PIO2: f64 = 4f64 * FRAC_PI_2; /* 0x401921FB, 0x54442D18 */
 
-    let hx = x.repr();
+    let hx = x.repr() as i32;
 
     let ix = hx & 0x7fffffff;
 
@@ -370,7 +369,7 @@ pub extern "C" fn sinf(x: f32) -> f32 {
                 return -cosdf(x as f64 + S1PIO2);
             }
         } else {
-            return sindf((if hx > 0 { S1PIO2 } else { -S1PIO2 }) - x as f64);
+            return sindf((if hx > 0 { S2PIO2 } else { -S2PIO2 }) - x as f64);
         }
     }
     if ix <= 0x40e231d5 {
@@ -405,7 +404,6 @@ pub extern "C" fn sinf(x: f32) -> f32 {
 pub extern "C" fn cos(_: f64) -> f64 {
     unimplemented!()
 }
-
 
 pub extern "C" fn cosf(x: f32) -> f32 {
     use core::f64::consts::FRAC_PI_2;
@@ -469,7 +467,6 @@ pub extern "C" fn cosf(x: f32) -> f32 {
     }
 }
 
-
 pub fn cosdf(x: f64) -> f32 {
     const ONE: f64 = 1.0;
     const C0: f64 = -0.499999997251031003120;
@@ -505,7 +502,6 @@ pub fn sindf(x: f64) -> f32 {
     s = z * x;
     ((x + s * (S1 + z * S2)) + s * w * r) as f32
 }
-
 
 pub extern "C" fn ieee754_rem_pio2f(x: f32) -> (i32, f64) {
     const HEX18P52: f64 = 6755399441055744.0;
@@ -549,12 +545,11 @@ pub extern "C" fn ieee754_rem_pio2f(x: f32) -> (i32, f64) {
     let (n, ty) = kernel_rem_pio2([z as f64], e0, 1, 0);
     if hx < 0 {
         y = -ty[0];
-        return (n, y);
+        return (-n, y);
     }
     y = ty[0];
     (n, y)
 }
-
 
 pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (i32, [f64; 3]) {
     const IPIO2: [i32; 66] = [
@@ -647,8 +642,9 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
     let mut y: [f64; 3] = [0.0; 3];
     let mut k: i32;
     let mut z: f64 = 0.0;
-    let ih: i32 = 0;
-    let n: i32 = 0;
+    let mut ih: i32 = 0;
+    let mut n: i32 = 0;
+    let mut carry: i32;
 
     /* initialize jk*/
     let jk = JK_INIT[prec as usize];
@@ -697,8 +693,8 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
         /* distill q[] into iq[] reversingly */
         //let mut i: usize = 0;
         i = 0;
-        let mut j = jz;
-        let mut z = q[jz as usize];
+        j = jz;
+        z = q[jz as usize];
         while j > 0 {
             fw = ((TWON24 * z) as i32) as f64;
             iq[i as usize] = (z - TWO24 * fw) as i32;
@@ -710,13 +706,13 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
         /* compute n */
         z = scalbn(z, q0); /* actual value of z */
         z -= 8.0 * floor(z * 0.125_f64); /* trim off integer >= 8 */
-        let n = z as i32;
+        n = z as i32;
         z -= n as f64;
-        let mut ih = 0;
+        ih = 0;
         if q0 > 0 {
             /* need iq[jz-1] to determine n */
             i = (iq[jz as usize - 1] >> (24 - q0)) as i32;
-            //n += i;
+            n += i;
             iq[jz as usize - 1] -= (i << (24 - q0)) as i32;
             ih = iq[jz as usize - 1] >> (23 - q0);
         } else if q0 == 0 {
@@ -727,8 +723,8 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
 
         if ih > 0 {
             /* q > 0.5 */
-            //n += 1;
-            let mut carry = 0;
+            n += 1;
+            carry = 0;
             i = 0;
             while i < jz {
                 j = iq[i as usize];
@@ -789,6 +785,7 @@ pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (
                     i += 1;
                 }
                 jz += k;
+                done = false;
                 continue 'recompute;
             }
         }
@@ -1034,11 +1031,11 @@ pub extern "C" fn scalbn(mut x: f64, n: i32) -> f64 {
     const TINY: f64 = 1.0e-300;
 
     let mut hx = (x.repr() >> 32) as i32;
-    let lx = x.repr() as u32;
+    let lx = x.repr() as i32;
     let mut k: i32 = ((hx & 0x7ff00000) >> 20) as i32; /* extract exponent */
     if k == 0 {
         /* 0 or subnormal x */
-        if lx | ((hx as u32) & 0x7fffffff) == 0 {
+        if lx | ((hx) & 0x7fffffff) == 0 {
             return x; /* +-0 */
         }
         x *= TWO54;
@@ -1058,7 +1055,7 @@ pub extern "C" fn scalbn(mut x: f64, n: i32) -> f64 {
     }
     if k > 0 {
         /* normal result */
-        return f64::from_repr((x.repr() & 0x800fffffffffffff) | ((k as u64) << 52) | lx as u64);
+        return f64::from_repr((x.repr() & 0x800fffff00000000) | ((k as u64) << 52) | ((lx as u64) & 0xffffffff));
     }
     if k <= -54 {
         if n > 50000 {
@@ -1070,7 +1067,7 @@ pub extern "C" fn scalbn(mut x: f64, n: i32) -> f64 {
     }
     k += 54; /* subnormal result */
 
-    f64::from_repr((x.repr() & 0x800fffffffffffff) | ((k as u64) << 52) | lx as u64) * TWOM54
+    f64::from_repr((x.repr() & 0x800fffffffffffff) | ((k as u64) << 52) | ((lx as u64) & 0xffffffff)) * TWOM54
 }
 
 pub extern "C" fn copysignf(x: f32, y: f32) -> f32 {
@@ -1084,7 +1081,6 @@ pub extern "C" fn copysign(x: f64, y: f64) -> f64 {
         (x.repr() & 0x7fffffffffffffff) | (y.repr() & 0x8000000000000000),
     )
 }
-
 
 #[cfg(test)]
 mod more_tests {
@@ -1149,7 +1145,6 @@ mod more_tests {
         assert_eq!(super::floor(-14207526.52111395f64), -14207527f64);
     }
 
-
     #[test]
     fn sinf() {
         use core::f32::consts::PI;
@@ -1163,12 +1158,12 @@ mod more_tests {
         assert_eq!(super::sinf(1f32), 0.84147096f32);
         assert_eq!(super::sinf(1.5f32), 0.997495f32);
         assert_eq!(super::sinf(2f32), 0.9092974f32);
-        assert_eq!(super::sinf(2.5f32), -0.8011436f32); //  wrong
         assert_eq!(super::sinf(0f32), 0f32);
-        assert_eq!(super::sinf(2f32 * PI), 0.00000017484555f32); //wrong
         assert_eq!(super::sinf(-1f32), -0.84147096f32);
-        assert_eq!(super::sinf(-PI), 0f32);
-        assert_eq!(super::sinf(PI), 0f32);
+        assert_eq!(super::sinf(PI), -0.00000008742278_f32);
+        assert_eq!(super::sinf(-PI), 0.00000008742278_f32);
+        assert_eq!(super::sinf(2.5f32), 0.5984721_f32); 
+        assert_eq!(super::sinf(2f32 * PI), 0.00000017484555f32); 
     }
 }
 
@@ -1187,7 +1182,6 @@ Some(F32(f(y.0, x.0)))
 fn atanf(f: extern fn (f32) -> f32, x: F32) -> Option <F32 > {
 Some(F32(f(x.0)))
 }
-
 
 // unimplemented!
 // fn atan(f: extern fn(f64) -> f64, x: F64) -> Option<F64> {
@@ -1226,7 +1220,6 @@ Some(F32(f(x.0)))
 fn floor(f: extern fn (f64) -> f64, x: F64) -> Option <F64 > {
 Some(F64(f(x.0)))
 }
-
 
 // unimplemented!
 // fn sqrt(f: extern fn(f64) -> f64, x: F64) -> Option<F64> {
