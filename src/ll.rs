@@ -467,7 +467,7 @@ pub extern "C" fn cosf(x: f32) -> f32 {
     }
 }
 
-pub fn cosdf(x: f64) -> f32 {
+fn cosdf(x: f64) -> f32 {
     const ONE: f64 = 1.0;
     const C0: f64 = -0.499999997251031003120;
     const C1: f64 = 0.0416666233237390631894;
@@ -485,7 +485,7 @@ pub fn cosdf(x: f64) -> f32 {
     (((ONE + z * C0) + w * C1) + (w * z) * r) as f32
 }
 
-pub fn sindf(x: f64) -> f32 {
+fn sindf(x: f64) -> f32 {
     const S1: f64 = -0.166666666416265235595;
     const S2: f64 = 0.0083333293858894631756;
     const S3: f64 = -0.000198393348360966317347;
@@ -503,7 +503,7 @@ pub fn sindf(x: f64) -> f32 {
     ((x + s * (S1 + z * S2)) + s * w * r) as f32
 }
 
-pub extern "C" fn ieee754_rem_pio2f(x: f32) -> (i32, f64) {
+fn ieee754_rem_pio2f(x: f32) -> (i32, f64) {
     const HEX18P52: f64 = 6755399441055744.0;
     const INVPIO2: f64 = 6.36619772367581382433e-01; /* 0x3FE45F30, 0x6DC9C883 */
     const PIO2_1: f64 = 1.57079631090164184570e+00; /* 0x3FF921FB, 0x50000000 */
@@ -551,7 +551,7 @@ pub extern "C" fn ieee754_rem_pio2f(x: f32) -> (i32, f64) {
     (n, y)
 }
 
-pub extern "C" fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (i32, [f64; 3]) {
+fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (i32, [f64; 3]) {
     const IPIO2: [i32; 66] = [
         0xA2F983,
         0x6E4E44,
