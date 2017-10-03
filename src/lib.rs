@@ -53,7 +53,6 @@ mod m;
 #[macro_use]
 mod qc;
 
-#[allow(unused_assignments)]
 mod ll;
 
 /// Trait that provides mathematical functions for floating point numbers

@@ -687,9 +687,9 @@ fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (i32, [f64; 3]) 
     }
 
     let mut jz = jk;
-    let mut done: bool = false;
-    'recompute: while !done {
-        done = true;
+    let mut _done: bool = false;
+    'recompute: while !_done {
+        _done = true;
         /* distill q[] into iq[] reversingly */
         //let mut i: usize = 0;
         i = 0;
@@ -785,7 +785,7 @@ fn kernel_rem_pio2(x: [f64; 1], e0: i32, nx: i32, prec: i32) -> (i32, [f64; 3]) 
                     i += 1;
                 }
                 jz += k;
-                done = false;
+                _done = false;
                 continue 'recompute;
             }
         }
