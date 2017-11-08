@@ -356,8 +356,8 @@ pub extern "C" fn sinf(x: f32) -> f32 {
             if (x as i32) == 0 {
                 return x; /* x with inexact if x != 0 */
             }
-            return sindf(x as f64);
         }
+        return sindf(x as f64);
     }
     if ix <= 0x407b53d1 {
         /* |x| ~<= 5*pi/4 */
@@ -423,8 +423,8 @@ pub extern "C" fn cosf(x: f32) -> f32 {
             if x as i32 == 0 {
                 return 1.0;
             } /* 1 with inexact if x != 0 */
-            return cosdf(x as f64);
         }
+        return cosdf(x as f64);
     }
     if ix <= 0x407b53d1 {
         /* |x| ~<= 5*pi/4 */
@@ -957,7 +957,8 @@ pub extern "C" fn floor(x: f64) -> f64 {
                 if j0 == 20 {
                     i0 += 1;
                 } else {
-                    j = (i1 as u32 + (1u32 << (52 - j0 as u32))) as u32;
+                    let i1x = i1 as u32;
+                    j = i1x.wrapping_add(1u32 << (52 - j0 as u32)) as u32;
                     if j < i1 {
                         i0 += 1;
                     } /* got a carry */
@@ -1055,7 +1056,8 @@ pub extern "C" fn scalbn(mut x: f64, n: i32) -> f64 {
     }
     if k > 0 {
         /* normal result */
-        return f64::from_repr((x.repr() & 0x800fffff00000000) | ((k as u64) << 52) | ((lx as u64) & 0xffffffff));
+        let high_word:u64 = (((hx as u32)&0x800fffff)|((k<<20) as u32)) as u64;
+        return f64::from_repr(high_word<<32 | (x.repr() & 0xffffffff));
     }
     if k <= -54 {
         if n > 50000 {
@@ -1067,7 +1069,8 @@ pub extern "C" fn scalbn(mut x: f64, n: i32) -> f64 {
     }
     k += 54; /* subnormal result */
 
-    f64::from_repr((x.repr() & 0x800fffffffffffff) | ((k as u64) << 52) | ((lx as u64) & 0xffffffff)) * TWOM54
+    let high_word:u64 = (((hx as u32)&0x800fffff)|((k<<20) as u32)) as u64;
+    f64::from_repr(high_word<<32 | ((x.repr()) & 0xffffffff)) * TWOM54
 }
 
 pub extern "C" fn copysignf(x: f32, y: f32) -> f32 {
@@ -1098,10 +1101,10 @@ mod more_tests {
     fn cosf() {
         use core::f32::consts::PI;
         assert_eq!(super::cosf(0f32), 1f32);
-        assert_eq!(super::cosf(0.1f32), 0.99500495f32);
-        assert_eq!(super::cosf(0.2f32), 0.9800669f32);
-        assert_eq!(super::cosf(0.3f32), 0.9553366f32);
-        assert_eq!(super::cosf(0.4f32), 0.92106104f32);
+        assert_eq!(super::cosf(0.1f32), 0.9950042f32);
+        assert_eq!(super::cosf(0.2f32), 0.9800666f32);
+        assert_eq!(super::cosf(0.3f32), 0.9553365f32);
+        assert_eq!(super::cosf(0.4f32), 0.921061f32);
         assert_eq!(super::cosf(0.5f32), 0.87758255f32);
         assert_eq!(super::cosf(1f32), 0.5403023f32);
         assert_eq!(super::cosf(-1f32), 0.5403023f32);
@@ -1149,11 +1152,11 @@ mod more_tests {
     fn sinf() {
         use core::f32::consts::PI;
         assert_eq!(super::sinf(0.00001f32), 0.00001f32);
-        assert_eq!(super::sinf(0.001f32), 0.0010123431f32);
-        assert_eq!(super::sinf(0.1f32), 0.09983921f32);
-        assert_eq!(super::sinf(0.2f32), 0.19867183f32);
-        assert_eq!(super::sinf(0.3f32), 0.2955212f32);
-        assert_eq!(super::sinf(0.5f32), 0.47942564f32);
+        assert_eq!(super::sinf(0.001f32), 0.0009999999f32);
+        assert_eq!(super::sinf(0.1f32), 0.09983342f32);
+        assert_eq!(super::sinf(0.2f32), 0.19866933f32);
+        assert_eq!(super::sinf(0.3f32), 0.29552022f32);
+        assert_eq!(super::sinf(0.5f32), 0.47942555f32);
         assert_eq!(super::sinf(0.8f32), 0.7173561f32);
         assert_eq!(super::sinf(1f32), 0.84147096f32);
         assert_eq!(super::sinf(1.5f32), 0.997495f32);

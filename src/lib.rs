@@ -32,6 +32,12 @@
 //! - `atanf`
 //! - `fabs`
 //! - `fabsf`
+//! - `sqrt`
+//! - `cosf`
+//! - `sinf`
+//! - `floor`
+//! - `scalbn`
+//! - `copysign`
 #![allow(unknown_lints)]
 #![cfg_attr(not(test), no_std)]
 #![deny(warnings)]
