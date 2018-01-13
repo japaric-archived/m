@@ -1,4 +1,4 @@
-use std::{f32, f64, fmt};
+use std::{fmt, f32, f64};
 
 use quickcheck::{Arbitrary, Gen};
 
