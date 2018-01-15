@@ -231,13 +231,14 @@ macro_rules! float_ext {
 
             #[cfg(test)]
             fn eq_repr(self, rhs: Self) -> bool {
+                const TOLERANCE_ULP: $repr_ty = 100;
+
                 if self.is_nan() && rhs.is_nan() {
                     true
                 } else {
                     let (lhs, rhs) = (self.repr(), rhs.repr());
 
-                    lhs == rhs || (lhs > rhs && lhs - rhs == 1) ||
-                    (rhs > lhs && rhs - lhs == 1)
+                    lhs.wrapping_sub(rhs) <= TOLERANCE_ULP
                 }
             }
 
