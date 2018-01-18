@@ -238,7 +238,8 @@ macro_rules! float_ext {
                 } else {
                     let (lhs, rhs) = (self.repr(), rhs.repr());
 
-                    lhs.wrapping_sub(rhs) <= TOLERANCE_ULP
+                    lhs == rhs || (lhs > rhs && lhs - rhs <= TOLERANCE_ULP) ||
+                    (rhs > lhs && rhs - lhs <= TOLERANCE_ULP)
                 }
             }
 
