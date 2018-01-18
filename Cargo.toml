@@ -9,4 +9,4 @@ repository = "https://github.com/japaric/m"
 version = "0.1.2"
 
 [dev-dependencies]
-quickcheck = "0.4.1"
+quickcheck = "0.6.0"
