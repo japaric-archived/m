@@ -103,8 +103,8 @@ macro_rules! arbitrary_float {
 
                 let (sign, mut exponent, mut significand) = g.gen();
                 if $lim {
-                    exponent = 0;
-                    significand = g.gen_range(0, 100);
+                    exponent = g.gen_range(0, 1097630827);
+                    //println!("  input:  {:?}  {:?}", exponent, $fty::from_parts(Sign::from_bool(sign),exponent,significand));
                 } else if g.gen_weighted_bool(10) {
                     return $ty(*g.choose(&special).unwrap());
                 } else if g.gen_weighted_bool(10) {
