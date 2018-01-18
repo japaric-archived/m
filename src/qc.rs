@@ -1,4 +1,4 @@
-use std::{f32, f64, fmt};
+use std::{fmt, f32, f64};
 
 use quickcheck::{Arbitrary, Gen};
 
@@ -75,6 +75,15 @@ impl fmt::Debug for F32 {
 }
 
 #[derive(Clone, Copy, PartialEq)]
+pub struct F32limit(pub f32);
+
+impl fmt::Debug for F32limit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} (0x{:08x})", self.0, self.0.repr())
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
 pub struct F64(pub f64);
 
 impl fmt::Debug for F64 {
@@ -84,7 +93,7 @@ impl fmt::Debug for F64 {
 }
 
 macro_rules! arbitrary_float {
-    ($ty:ident, $fty:ident) => {
+    ($ty:ident, $fty:ident, $lim:ident) => {
         impl Arbitrary for $ty {
             fn arbitrary<G>(g: &mut G) -> $ty
                 where G: Gen
@@ -93,7 +102,10 @@ macro_rules! arbitrary_float {
                     [-0.0, 0.0, $fty::NAN, $fty::INFINITY, $fty::NEG_INFINITY];
 
                 let (sign, mut exponent, mut significand) = g.gen();
-                if g.gen_weighted_bool(10) {
+                if $lim {
+                    exponent = g.gen_range(0, 1097630827);
+                    //println!("  input:  {:?}  {:?}", exponent, $fty::from_parts(Sign::from_bool(sign),exponent,significand));
+                } else if g.gen_weighted_bool(10) {
                     return $ty(*g.choose(&special).unwrap());
                 } else if g.gen_weighted_bool(10) {
                     // NaN variants
@@ -111,5 +123,7 @@ macro_rules! arbitrary_float {
     }
 }
 
-arbitrary_float!(F32, f32);
-arbitrary_float!(F64, f64);
+arbitrary_float!(F32, f32, false);
+arbitrary_float!(F64, f64, false);
+arbitrary_float!(F32limit, f32, true);
+//arbitrary_float!(F64limit, f64, true);
