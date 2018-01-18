@@ -1199,12 +1199,12 @@ fn fabsf(f: extern fn (f32) -> f32, x: F32) -> Option <F32 > {
 Some(F32(f(x.0)))
 }
 
-fn cosf(f: extern fn (f32) -> f32, x: F32) -> Option <F32 > {
-Some(F32(f(x.0)))
+fn cosf(f: extern fn (f32) -> f32, x: F32limit) -> Option <F32limit > {
+Some(F32limit(f(x.0)))
 }
 
-fn sinf(f: extern fn (f32) -> f32, x: F32) -> Option <F32 > {
-Some(F32(f(x.0)))
+fn sinf(f: extern fn (f32) -> f32, x: F32limit) -> Option <F32limit > {
+Some(F32limit(f(x.0)))
 }
 
 fn copysign(f: extern fn (f64, f64) -> f64, y: F64, x: F64) -> Option < F64 > {
