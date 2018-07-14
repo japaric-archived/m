@@ -1,3 +1,20 @@
+# PSA: this crate has been deprecated in favor of [`libm`]
+
+[`libm`]: https://github.com/japaric/libm
+
+`libm` is a port of MUSL's libm. MUSL source code proved much easier to translate to Rust, and more
+importantly it was easier to write a test generator that didn't require compiling C code and that
+worked on a bunch of different architectures.
+
+These two aspects make such a difference that we were able to [port 30 math functions to Rust in less
+than 24 hours][libm-changelog].
+
+[libm-changelog]: https://github.com/japaric/libm/blob/master/CHANGELOG.md#v011---2018-07-14
+
+-@japaric, 2018-07-14
+
+---
+
 [![crates.io](https://img.shields.io/crates/d/m.svg)](https://crates.io/crates/m)
 [![crates.io](https://img.shields.io/crates/v/m.svg)](https://crates.io/crates/m)
 
